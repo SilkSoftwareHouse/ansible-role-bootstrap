@@ -7,7 +7,7 @@
   delegate_to: localhost
 
 - name: wait for host
-  ansible.builtin.wait_for:
+  wait_for:
     port: "{{ ansible_port | default('22') }}"
     host: "{{ (ansible_ssh_host | default(ansible_host) | default(inventory_hostname)) }}"
   connection: local
@@ -20,16 +20,16 @@
 - name: prepare system
   block:
     - name: test connection
-      ansible.builtin.wait_for_connection:
+      wait_for_connection:
         timeout: "{{ bootstrap_timeout }}"
       register: bootstrap_connect
       changed_when: no
   rescue:
     - name: gather bootstrap facts
-      ansible.builtin.include_tasks: "gather_facts.yml"
+      include_tasks: "gather_facts.yml"
 
     - name: install bootstrap packages
-      ansible.builtin.raw: "{{ bootstrap_install.raw }}"
+      raw: "{{ bootstrap_install.raw }}"
       register: bootstrap_install_packages
       changed_when:
         - (bootstrap_install.stdout_regex in bootstrap_install_packages.stdout and
@@ -40,17 +40,17 @@
         ansible_user: "{{ bootstrap_user }}"
   always:
     - name: set bootstrap_ansible_user
-      ansible.builtin.set_fact:
+      set_fact:
         bootstrap_ansible_user: "{{ ansible_user | default(omit) if bootstrap_connect is succeeded else bootstrap_user }}"
       changed_when: no
 
 - name: ensure system is prepared
   block:
     - name: gather ansible facts
-      ansible.builtin.setup:
+      setup:
 
     - name: install bootstrap packages
-      ansible.builtin.package:
+      package:
         name: "{{ item }}"
         state: present
       loop: "{{ bootstrap_facts_packages.split() }}"
